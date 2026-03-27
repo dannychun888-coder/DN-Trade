@@ -8,79 +8,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@500;700&display=swap');
-        
-        :root {
-            --safe-bottom: env(safe-area-inset-bottom);
-        }
-
-        /* 防止 iOS 橡皮筋回彈與誤觸位移 */
-        html, body { 
-            position: fixed; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            background: #000;
-            touch-action: none; /* 禁用瀏覽器默認手勢，防止畫面跑掉 */
-        }
-
-        body { 
-            color: #eee; 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Noto Sans TC", sans-serif; 
-            margin: 0; 
-            display: flex;
-            flex-direction: column;
-        }
-        
+        :root { --safe-bottom: env(safe-area-inset-bottom); }
+        html, body { position: fixed; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; }
+        body { color: #eee; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Noto Sans TC", sans-serif; margin: 0; display: flex; flex-direction: column; }
         .neon-green { color: #39FF14; }
-        
-        /* 側邊面板 */
         .drawer { position: fixed; top: 0; bottom: calc(85px + var(--safe-bottom)); width: 85%; background: #0a0a0a; z-index: 100; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 20px 0 50px rgba(0,0,0,0.5); touch-action: auto; }
         #left-drawer { left: 0; transform: translateX(-100%); border-right: 1px solid #1a1a1a; }
         #right-drawer { right: 0; transform: translateX(100%); border-left: 1px solid #1a1a1a; }
         #left-drawer.active { transform: translateX(0); }
         #right-drawer.active { transform: translateX(0); }
-
-        @media (min-width: 1024px) {
-            .drawer { position: static; width: auto; transform: none !important; box-shadow: none; }
-            .mobile-only { display: none; }
-        }
-
-        /* 頂部導航 */
+        @media (min-width: 1024px) { .drawer { position: static; width: auto; transform: none !important; box-shadow: none; } }
         .nav-item { color: #555; font-size: 15px; font-weight: 700; cursor: pointer; padding: 8px 0; position: relative; transition: 0.3s; }
         .nav-item.active { color: #39FF14; }
         .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2.5px; background: #39FF14; border-radius: 2px; }
-
-        /* 圖表高度限制 */
-        #chart-container { 
-            height: 62vh; 
-            border-bottom: 1px solid #111;
-            touch-action: auto; /* 允許在圖表區域內操作 */
-        }
+        #chart-container { height: 62vh; border-bottom: 1px solid #111; touch-action: auto; }
         @media (min-width: 1024px) { #chart-container { height: 100%; } }
-
-        /* iPhone 底部選單 */
-        .mobile-bottom-nav { 
-            display: none; position: fixed; bottom: 0; width: 100%; 
-            height: calc(80px + var(--safe-bottom)); 
-            background: rgba(8, 8, 8, 0.98); 
-            backdrop-filter: blur(25px);
-            border-top: 1px solid #1a1a1a; z-index: 110;
-            padding-bottom: var(--safe-bottom);
-        }
+        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; width: 100%; height: calc(80px + var(--safe-bottom)); background: rgba(8, 8, 8, 0.98); backdrop-filter: blur(25px); border-top: 1px solid #1a1a1a; z-index: 110; padding-bottom: var(--safe-bottom); }
         @media (max-width: 1024px) { .mobile-bottom-nav { display: flex; justify-content: space-around; align-items: center; } }
-
         .btn-nav { font-size: 17px; font-weight: 700; color: #444; letter-spacing: 0.05em; transition: 0.2s; padding: 10px 15px; }
-        .btn-nav.active { color: #39FF14; transform: scale(1.05); }
-
+        .btn-nav.active { color: #39FF14; }
         .list-item { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 10px; padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .list-item.active { border-color: #39FF14; background: rgba(57, 255, 20, 0.03); }
-
         input { background: #111; border: 1px solid #222; color: #fff; padding: 14px; border-radius: 10px; width: 100%; font-size: 15px; outline: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
-
     <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black z-50">
         <div class="flex items-center gap-8">
             <div onclick="window.location.reload()" class="text-2xl font-bold tracking-tighter cursor-pointer active:opacity-50 transition">
@@ -129,7 +82,7 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const STORAGE_KEY = 'DN_Trade_V19_1';
+        const STORAGE_KEY = 'DN_Trade_V19_2';
         const defaultLists = {
             forex: ['FX_IDC:USDTWD', 'OANDA:USDTWD', 'FX_IDC:USDCNY'],
             crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT'],
@@ -149,11 +102,17 @@
             try {
                 const bito = await fetch('https://api.bitopro.com/v3/tickers/usdt_twd');
                 const bitoJ = await bito.json();
-                document.getElementById('bito-last').innerText = parseFloat(bitoJ.data.lastPrice).toFixed(3);
-                
+                if (bitoJ.data && bitoJ.data.lastPrice) {
+                    document.getElementById('bito-last').innerText = parseFloat(bitoJ.data.lastPrice).toFixed(3);
+                }
+            } catch (e) {}
+            
+            try {
                 const max = await fetch('https://max-api.maicoin.com/api/v2/tickers/usdttwd');
                 const maxJ = await max.json();
-                document.getElementById('max-last').innerText = parseFloat(maxJ.last).toFixed(3);
+                if (maxJ && maxJ.last) {
+                    document.getElementById('max-last').innerText = parseFloat(maxJ.last).toFixed(3);
+                }
             } catch (e) {}
         }
         setInterval(fetchPrices, 3000);
@@ -186,26 +145,14 @@
 
         function loadChart(symbol) {
             new TradingView.widget({
-                "autosize": true,
-                "symbol": symbol,
-                "interval": "15",
-                "theme": "dark",
-                "style": "1",
-                "locale": "zh_TW",
-                "container_id": "tv_main",
-                "allow_symbol_change": true,
-                "hide_side_toolbar": false,
-                "backgroundColor": "rgba(0, 0, 0, 1)",
-                "gridColor": "rgba(25, 25, 25, 1)"
+                "autosize": true, "symbol": symbol, "interval": "15", "theme": "dark", "style": "1", "locale": "zh_TW", "container_id": "tv_main", "allow_symbol_change": true, "hide_side_toolbar": false, "backgroundColor": "rgba(0, 0, 0, 1)", "gridColor": "rgba(25, 25, 25, 1)"
             });
             updateActiveState(symbol);
             if (window.innerWidth < 1024) closeDrawers();
         }
 
         function updateActiveState(symbol) {
-            document.querySelectorAll('.list-item').forEach(el => {
-                el.classList.toggle('active', el.dataset.sym === symbol);
-            });
+            document.querySelectorAll('.list-item').forEach(el => { el.classList.toggle('active', el.dataset.sym === symbol); });
         }
 
         function renderWatchlist(shouldLoadFirst = true) {
