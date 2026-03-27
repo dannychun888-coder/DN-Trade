@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>DN_Trade | 智慧排序終端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { background: #000; color: #eee; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; margin: 0; }
+        .neon-green { color: #39FF14; }
+        
+        /* 導航標籤 */
+        .nav-item { color: #555; font-size: 13px; cursor: pointer; padding: 12px 5px; position: relative; transition: 0.3s; }
+        .nav-item.active { color: #39FF14; font-weight: bold; }
+        .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #39FF14; box-shadow: 0 0 10px #39FF14; }
+
+        /* Watchlist 拖曳與項目樣式 */
+        .list-item { 
+            background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 4px; padding: 12px; margin-bottom: 6px; 
+            cursor: grab; font-size: 12px; display: flex; justify-content: space-between; align-items: center; transition: border-color 0.2s;
+        }
+        .list-item:active { cursor: grabbing; border-color: #39FF14; }
+        .list-item.active { background: rgba(57,255,20,0.1); border-color: #39FF14; }
+        .sortable-ghost { opacity: 0.3; background: #39FF14; }
+
+        /* 數據卡片 */
+        .data-card { border-bottom: 1px solid #222; padding: 20px 15px; }
+        .price-label { font-size: 10px; font-weight: bold; margin-bottom: 4px; display: block; }
+        
+        /* 輸入框與滾動條隱藏 */
+        input { background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; width: 100%; font-size: 11px; outline: none; transition: border-color 0.2s; }
+        input:focus { border-color: #39FF14; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <header class="h-14 flex items-center justify-between px-6 border-b border-white/10 bg-black z-50">
+        <div class="flex items-center gap-10">
+            <div class="text-2xl font-bold tracking-tighter cursor-default">
+                <span class="neon-green">DN</span><span class="text-white">_Trade</span>
+            </div>
+            <nav class="flex gap-8" id="main-nav">
+                <div class="nav-item active" data-cat="forex">外匯 Forex</div>
+                <div class="nav-item" data-cat="crypto">加密貨幣 Crypto</div>
+                <div class="nav-item" data-cat="stock">股市 Stock</div>
+            </nav>
+        </div>
+        <div id="ws-status" class="text-[9px] font-mono text-gray-600 uppercase tracking-widest">System Online</div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-12 overflow-hidden p-1 gap-1">
+        
+        <aside class="col-span-2 bg-[#050505] border-r border-white/5">
+            <div class="data-card">
+                <span class="price-label text-orange-500">BITOPRO USDT/TWD</span>
+                <div id="bito-last" class="text-3xl font-mono neon-green tracking-tighter">--.---</div>
+            </div>
+            <div class="data-card">
+                <span class="price-label text-blue-500">MAX USDT/TWD</span>
+                <div id="max-last" class="text-3xl font-mono text-blue-400 tracking-tighter">--.---</div>
+            </div>
+        </aside>
+
+        <section class="col-span-8 bg-black border border-white/5 overflow-hidden">
+            <div id="tv_main" class="h-full w-full"></div>
+        </section>
+
+        <aside class="col-span-2 bg-[#050505] border-l border-white/5 flex flex-col">
+            <div class="p-3 text-[10px] text-gray-500 font-bold uppercase border-b border-white/5 flex justify-between">
+                自選清單 <span>拖曳排序</span>
+            </div>
+            <div id="watchlist" class="flex-1 overflow-y-auto p-2 no-scrollbar">
+                </div>
+            <div class="p-3 border-t border-white/5">
+                <input type="text" id="new-sym" placeholder="新增 (例如 NASDAQ:TSLA)">
+            </div>
+        </aside>
+    </main>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        /**
+         * 1. 狀態與本地記憶體 (State & Storage)
+         */
+        const STORAGE_KEY = 'DN_Trade_V_Final';
+        const defaultLists = {
+            forex: ['OANDA:USDTWD', 'FX_IDC:USDCNY', 'FX_IDC:USDMYR'],
+            crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT'],
+            stock: ['NASDAQ:AAPL', 'NASDAQ:NVDA', 'NASDAQ:IXIC']
+        };
+
+        let currentCat = 'forex';
+        let storage = defaultLists;
+        
+        // 安全讀取 LocalStorage，防止資料損毀導致白畫面
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) storage = JSON.parse(saved);
+        } catch (e) {
+            console.warn("Storage parsing error, using defaults.");
+        }
+
+        function saveStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(storage));
+        }
+
+        /**
+         * 2. 實時數據層 (Data Fetching & WebSocket)
+         */
+        
+        // BitoPro - REST API 輪詢
+        async function fetchBitoPrice() {
+            try {
+                const res = await fetch('https://api.bitopro.com/v3/tickers/usdt_twd');
+                if (!res.ok) throw new Error('BitoPro API Network response was not ok');
+                const json = await res.json();
+                if (json && json.data && json.data.lastPrice) {
+                    document.getElementById('bito-last').innerText = parseFloat(json.data.lastPrice).toFixed(3);
+                }
+            } catch (e) {
+                console.log("BitoPro Syncing...");
+            }
+        }
+        setInterval(fetchBitoPrice, 2000);
+        fetchBitoPrice();
+
+        // MAX - REST API 輪詢 (最簡單的方式)
+        async function fetchMaxPrice() {
+            try {
+                const res = await fetch('https://max-api.maicoin.com/api/v2/tickers/usdttwd');
+                if (!res.ok) throw new Error('MAX API Error');
+                const json = await res.json();
+                if (json && json.last) {
+                    document.getElementById('max-last').innerText = parseFloat(json.last).toFixed(3);
+                }
+            } catch (e) {
+                console.log("MAX Syncing...");
+            }
+        }
+        setInterval(fetchMaxPrice, 2000);
+        fetchMaxPrice();
+
+        /**
+         * 3. 視圖層與互動邏輯 (UI & Events)
+         */
+        const watchlistEl = document.getElementById('watchlist');
+
+        // 載入 TradingView 圖表
+        function loadChart(symbol) {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": symbol,
+                "interval": "15",
+                "theme": "dark",
+                "style": "1",
+                "locale": "zh_TW",
+                "container_id": "tv_main",
+                "allow_symbol_change": true
+            });
+            
+            // 更新右側清單的 Active 狀態
+            document.querySelectorAll('.list-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.sym === symbol);
+            });
+        }
+
+        // 渲染自選清單
+        function renderWatchlist() {
+            watchlistEl.innerHTML = '';
+            const list = storage[currentCat] || [];
+            
+            list.forEach((sym) => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.dataset.sym = sym;
+                div.innerHTML = `
+                    <div class="flex flex-col flex-1" onclick="loadChart('${sym}')">
+                        <span class="font-bold">${sym.split(':')[1] || sym}</span>
+                        <span class="text-[9px] text-gray-600">${sym.split(':')[0]}</span>
+                    </div>
+                    <button onclick="removeItem('${sym}', event)" class="text-gray-600 hover:text-red-500 text-lg px-2">&times;</button>
+                `;
+                watchlistEl.appendChild(div);
+            });
+
+            // 自動載入該分類的第一個商品
+            if (list.length > 0) {
+                loadChart(list[0]);
+            } else {
+                document.getElementById('tv_main').innerHTML = '<div class="flex items-center justify-center h-full text-gray-700 text-sm">請新增觀察代碼</div>';
+            }
+        }
+
+        // 移除清單項目 (防止觸發 loadChart 點擊事件)
+        window.removeItem = function(sym, event) {
+            event.stopPropagation();
+            storage[currentCat] = storage[currentCat].filter(s => s !== sym);
+            saveStorage();
+            renderWatchlist();
+        };
+
+        // 初始化 Sortable.js (拖曳排序)
+        new Sortable(watchlistEl, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function() {
+                const newOrder = [];
+                watchlistEl.querySelectorAll('.list-item').forEach(el => {
+                    newOrder.push(el.dataset.sym);
+                });
+                storage[currentCat] = newOrder;
+                saveStorage();
+            }
+        });
+
+        // 導航標籤切換事件
+        document.querySelectorAll('.nav-item').forEach(nav => {
+            nav.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                this.classList.add('active');
+                currentCat = this.dataset.cat;
+                renderWatchlist();
+            });
+        });
+
+        // 新增商品代碼 (Enter 鍵觸發)
+        document.getElementById('new-sym').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && this.value.trim() !== '') {
+                const newSymbol = this.value.trim().toUpperCase();
+                if (!storage[currentCat]) storage[currentCat] = [];
+                
+                // 避免重複加入
+                if (!storage[currentCat].includes(newSymbol)) {
+                    storage[currentCat].push(newSymbol);
+                    saveStorage();
+                    renderWatchlist();
+                }
+                this.value = '';
+            }
+        });
+
+        // 系統啟動
+        renderWatchlist();
+    </script>
+</body>
+</html>
