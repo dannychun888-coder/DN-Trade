@@ -2,55 +2,80 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DN_Trade | 全平台終端</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>DN_Trade | Professional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;700&display=swap');
-        body { background: #000; color: #eee; font-family: 'Noto Sans TC', sans-serif; overflow: hidden; margin: 0; }
+        
+        :root {
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        body { 
+            background: #000; color: #eee; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; 
+            overflow: hidden; margin: 0; 
+        }
+        
         .neon-green { color: #39FF14; }
         
-        /* 響應式佈局邏輯 */
-        .drawer { position: fixed; top: 0; bottom: 60px; width: 85%; background: #050505; z-index: 100; transition: 0.3s; }
-        #left-drawer { left: -100%; border-right: 1px solid #222; }
-        #right-drawer { right: -100%; border-left: 1px solid #222; }
-        #left-drawer.active { left: 0; }
-        #right-drawer.active { right: 0; }
+        /* 響應式抽屜 */
+        .drawer { position: fixed; top: 0; bottom: calc(75px + var(--safe-bottom)); width: 85%; background: #080808; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #left-drawer { left: 0; transform: translateX(-100%); border-right: 1px solid #1a1a1a; }
+        #right-drawer { right: 0; transform: translateX(100%); border-left: 1px solid #1a1a1a; }
+        #left-drawer.active { transform: translateX(0); }
+        #right-drawer.active { transform: translateX(0); }
 
         @media (min-width: 1024px) {
-            .drawer { position: static; width: auto; height: auto; }
+            .drawer { position: static; width: auto; transform: none !important; }
             .mobile-only { display: none; }
         }
 
-        /* 導航標籤 */
-        .nav-item { color: #555; font-size: 13px; cursor: pointer; padding: 12px 5px; position: relative; transition: 0.3s; white-space: nowrap; }
-        .nav-item.active { color: #39FF14; font-weight: bold; }
-        .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #39FF14; box-shadow: 0 0 10px #39FF14; }
+        /* 頂部導航 */
+        .nav-item { color: #444; font-size: 14px; font-weight: 600; cursor: pointer; padding: 10px 0; position: relative; transition: 0.2s; }
+        .nav-item.active { color: #39FF14; }
+        .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #39FF14; }
 
-        /* Watchlist 項目 */
-        .list-item { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 4px; padding: 12px; margin-bottom: 6px; cursor: grab; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .list-item.active { background: rgba(57,255,20,0.1); border-color: #39FF14; }
+        /* iPhone 底部選單優化 */
+        .mobile-bottom-nav { 
+            display: none; position: fixed; bottom: 0; width: 100%; 
+            height: calc(75px + var(--safe-bottom)); 
+            background: rgba(10, 10, 10, 0.95); 
+            backdrop-filter: blur(20px);
+            border-top: 1px solid #1a1a1a; z-index: 110;
+            padding-bottom: var(--safe-bottom);
+        }
         
-        /* 底部選單 (手機專用) */
-        .mobile-bottom-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 60px; background: #0a0a0a; border-top: 1px solid #222; z-index: 110; }
-        @media (max-width: 1024px) { .mobile-bottom-nav { display: flex; justify-content: space-around; align-items: center; } }
+        @media (max-width: 1024px) { 
+            .mobile-bottom-nav { display: flex; justify-content: space-around; align-items: center; } 
+            /* 讓圖表區域縮短，確保 TV 工具列出現 */
+            #chart-container { height: calc(100% - 10px); padding-bottom: 20px; }
+        }
 
-        input { background: #0a0a0a; border: 1px solid #333; color: #fff; padding: 10px; border-radius: 4px; width: 100%; font-size: 11px; outline: none; }
+        .btn-nav { font-size: 15px; font-weight: 700; color: #666; letter-spacing: -0.02em; transition: 0.2s; }
+        .btn-nav.active { color: #39FF14; }
+
+        /* Watchlist */
+        .list-item { background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 8px; padding: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .list-item.active { border-color: #39FF14; background: rgba(57, 255, 20, 0.05); }
+
+        input { background: #111; border: 1px solid #222; color: #fff; padding: 12px; border-radius: 8px; width: 100%; font-size: 14px; outline: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
-    <header class="h-14 flex items-center justify-between px-4 lg:px-6 border-b border-white/10 bg-black z-50">
-        <div class="flex items-center gap-4 lg:gap-10">
-            <div class="text-xl lg:text-2xl font-bold tracking-tighter">
+    <header class="h-14 flex items-center justify-between px-5 border-b border-white/5 bg-black z-50">
+        <div class="flex items-center gap-6">
+            <div class="text-xl font-bold tracking-tighter">
                 <span class="neon-green">DN</span><span class="text-white">_Trade</span>
             </div>
-            <nav class="flex gap-4 lg:gap-8 overflow-x-auto no-scrollbar" id="main-nav">
-                <div class="nav-item active" data-cat="forex">外匯 Forex</div>
-                <div class="nav-item" data-cat="crypto">加密 Crypto</div>
-                <div class="nav-item" data-cat="stock">股市 Stock</div>
+            <nav class="flex gap-5 overflow-x-auto no-scrollbar" id="main-nav">
+                <div class="nav-item active" data-cat="forex">外匯</div>
+                <div class="nav-item" data-cat="crypto">加密</div>
+                <div class="nav-item" data-cat="stock">股市</div>
             </nav>
         </div>
     </header>
@@ -58,50 +83,55 @@
     <main class="flex-1 grid grid-cols-12 overflow-hidden p-1 gap-1 relative">
         
         <aside id="left-drawer" class="col-span-12 lg:col-span-2 drawer lg:block">
-            <div class="p-5 border-b border-white/5">
-                <span class="text-[10px] font-bold text-orange-500 block mb-1">BITOPRO USDT/TWD</span>
+            <div class="p-6 border-b border-white/5">
+                <span class="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-2 block">Bitopro USDT</span>
                 <div id="bito-last" class="text-3xl font-mono neon-green tracking-tighter">--.---</div>
             </div>
-            <div class="p-5 border-b border-white/5">
-                <span class="text-[10px] font-bold text-blue-500 block mb-1">MAX USDT/TWD</span>
+            <div class="p-6 border-b border-white/5">
+                <span class="text-[11px] font-bold text-blue-500 uppercase tracking-widest mb-2 block">Max USDT</span>
                 <div id="max-last" class="text-3xl font-mono text-blue-400 tracking-tighter">--.---</div>
             </div>
-            <button onclick="toggleDrawer('left')" class="mobile-only w-full py-4 text-gray-500 text-xs">關閉面板</button>
         </aside>
 
-        <section class="col-span-12 lg:col-span-8 bg-black border border-white/5 overflow-hidden">
+        <section id="chart-container" class="col-span-12 lg:col-span-8 bg-black overflow-hidden relative">
             <div id="tv_main" class="h-full w-full"></div>
         </section>
 
         <aside id="right-drawer" class="col-span-12 lg:col-span-2 drawer lg:flex flex-col">
-            <div class="p-3 text-[10px] text-gray-500 font-bold border-b border-white/5 flex justify-between">
-                WATCHLIST <span>拖曳排序</span>
+            <div class="p-4 text-[11px] text-gray-500 font-bold border-b border-white/5 flex justify-between uppercase tracking-widest">
+                Watchlist <span>Sort</span>
             </div>
-            <div id="watchlist" class="flex-1 overflow-y-auto p-2 no-scrollbar"></div>
-            <div class="p-3 border-t border-white/5">
-                <input type="text" id="new-sym" placeholder="新增 (例如 NASDAQ:TSLA)">
-                <button onclick="toggleDrawer('right')" class="mobile-only w-full py-3 mt-2 text-gray-500 text-xs">返回圖表</button>
+            <div id="watchlist" class="flex-1 overflow-y-auto p-3 no-scrollbar"></div>
+            <div class="p-4 border-t border-white/5">
+                <input type="text" id="new-sym" placeholder="輸入代碼 (例: ICE:USDTWD)">
             </div>
         </aside>
     </main>
 
     <div class="mobile-bottom-nav">
-        <button onclick="toggleDrawer('left')" class="text-[10px] text-gray-400">📊 實時匯率</button>
-        <button onclick="closeDrawers()" class="text-[10px] neon-green">📉 交易圖表</button>
-        <button onclick="toggleDrawer('right')" class="text-[10px] text-gray-400">📜 自選清單</button>
+        <button onclick="toggleDrawer('left')" id="btn-left" class="btn-nav">實時匯率</button>
+        <button onclick="closeDrawers()" id="btn-chart" class="btn-nav active">交易圖表</button>
+        <button onclick="toggleDrawer('right')" id="btn-right" class="btn-nav">自選清單</button>
     </div>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const STORAGE_KEY = 'DN_Trade_Mobile_Final';
+        const STORAGE_KEY = 'DN_Trade_V18';
         const defaultLists = {
-            forex: ['OANDA:USDTWD', 'FX_IDC:USDCNY', 'FX_IDC:USDMYR'],
-            crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT', 'BINANCE:SOLUSDT'],
-            stock: ['NASDAQ:AAPL', 'NASDAQ:NVDA', 'NASDAQ:IXIC']
+            forex: ['ICE:USDTWD', 'OANDA:USDTWD', 'FX_IDC:USDCNY'],
+            crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT'],
+            stock: ['NASDAQ:NVDA', 'NASDAQ:TSLA']
         };
 
         let currentCat = 'forex';
         let storage = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultLists;
+
+        // 1. 核心邏輯：進入時強制載入 ICE:USDTWD
+        window.onload = () => {
+            loadChart('ICE:USDTWD'); 
+            fetchPrices();
+            renderWatchlist(false); // 渲染但不切換圖表
+        };
 
         // 價格抓取
         async function fetchPrices() {
@@ -113,34 +143,65 @@
                 const max = await fetch('https://max-api.maicoin.com/api/v2/tickers/usdttwd');
                 const maxJ = await max.json();
                 document.getElementById('max-last').innerText = parseFloat(maxJ.last).toFixed(3);
-            } catch (e) { console.log("Syncing..."); }
+            } catch (e) {}
         }
-        setInterval(fetchPrices, 2000);
-        fetchPrices();
+        setInterval(fetchPrices, 3000);
 
-        // 介面交互
+        // UI 交互
         function toggleDrawer(side) {
             const left = document.getElementById('left-drawer');
             const right = document.getElementById('right-drawer');
-            if (side === 'left') { left.classList.toggle('active'); right.classList.remove('active'); }
-            else { right.classList.toggle('active'); left.classList.remove('active'); }
+            const btns = { left: document.getElementById('btn-left'), right: document.getElementById('btn-right'), chart: document.getElementById('btn-chart') };
+            
+            Object.values(btns).forEach(b => b.classList.remove('active'));
+
+            if (side === 'left') {
+                left.classList.toggle('active');
+                right.classList.remove('active');
+                if(left.classList.contains('active')) btns.left.classList.add('active');
+                else btns.chart.classList.add('active');
+            } else {
+                right.classList.toggle('active');
+                left.classList.remove('active');
+                if(right.classList.contains('active')) btns.right.classList.add('active');
+                else btns.chart.classList.add('active');
+            }
         }
 
         function closeDrawers() {
             document.getElementById('left-drawer').classList.remove('active');
             document.getElementById('right-drawer').classList.remove('active');
+            document.getElementById('btn-chart').classList.add('active');
+            document.getElementById('btn-left').classList.remove('active');
+            document.getElementById('btn-right').classList.remove('active');
         }
 
         function loadChart(symbol) {
             new TradingView.widget({
-                "autosize": true, "symbol": symbol, "interval": "15", "theme": "dark", "style": "1",
-                "locale": "zh_TW", "container_id": "tv_main", "allow_symbol_change": true
+                "autosize": true,
+                "symbol": symbol,
+                "interval": "15",
+                "theme": "dark",
+                "style": "1",
+                "locale": "zh_TW",
+                "container_id": "tv_main",
+                "allow_symbol_change": true,
+                "hide_side_toolbar": false, // 確保功能列顯示
+                "details": false,
+                "hotlist": false,
+                "calendar": false
             });
-            document.querySelectorAll('.list-item').forEach(el => el.classList.toggle('active', el.dataset.sym === symbol));
+            updateActiveState(symbol);
             if (window.innerWidth < 1024) closeDrawers();
         }
 
-        function renderWatchlist() {
+        function updateActiveState(symbol) {
+            document.querySelectorAll('.list-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.sym === symbol);
+            });
+        }
+
+        function renderWatchlist(shouldLoadFirst = true) {
             const listEl = document.getElementById('watchlist');
             listEl.innerHTML = '';
             storage[currentCat].forEach(sym => {
@@ -149,37 +210,40 @@
                 div.dataset.sym = sym;
                 div.innerHTML = `
                     <div class="flex-1" onclick="loadChart('${sym}')">
-                        <div class="font-bold">${sym.split(':')[1] || sym}</div>
-                        <div class="text-[9px] text-gray-600">${sym.split(':')[0]}</div>
+                        <div class="font-bold text-[14px]">${sym.split(':')[1] || sym}</div>
+                        <div class="text-[10px] text-gray-600 font-mono uppercase">${sym.split(':')[0]}</div>
                     </div>
-                    <button onclick="removeSym('${sym}', event)" class="text-gray-600 px-2">&times;</button>`;
+                    <button onclick="removeSym('${sym}', event)" class="text-gray-600 px-2 text-xl">&times;</button>`;
                 listEl.appendChild(div);
             });
-            if (storage[currentCat].length > 0) loadChart(storage[currentCat][0]);
+            if (shouldLoadFirst && storage[currentCat].length > 0) loadChart(storage[currentCat][0]);
         }
 
         window.removeSym = function(sym, e) {
             e.stopPropagation();
             storage[currentCat] = storage[currentCat].filter(s => s !== sym);
-            save(); renderWatchlist();
+            save(); renderWatchlist(false);
         };
 
         function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(storage)); }
 
-        // 事件監聽
         document.querySelectorAll('.nav-item').forEach(nav => {
             nav.onclick = function() {
                 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
                 this.classList.add('active');
                 currentCat = this.dataset.cat;
-                renderWatchlist();
+                renderWatchlist(true);
             };
         });
 
         document.getElementById('new-sym').onkeypress = function(e) {
             if (e.key === 'Enter' && this.value) {
-                storage[currentCat].push(this.value.toUpperCase());
-                save(); renderWatchlist(); this.value = '';
+                const s = this.value.toUpperCase();
+                if(!storage[currentCat].includes(s)) {
+                    storage[currentCat].push(s);
+                    save(); renderWatchlist(false);
+                }
+                this.value = '';
             }
         };
 
@@ -189,8 +253,6 @@
                 save();
             }
         });
-
-        renderWatchlist();
     </script>
 </body>
 </html>
