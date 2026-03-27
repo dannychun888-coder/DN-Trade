@@ -50,11 +50,11 @@
         
         @media (max-width: 1024px) { 
             .mobile-bottom-nav { display: flex; justify-content: space-around; align-items: center; } 
-            /* 讓圖表區域縮短，確保 TV 工具列出現 */
-            #chart-container { height: calc(100% - 10px); padding-bottom: 20px; }
+            /* 縮短高度確保 TV 工具列不被遮擋 */
+            #chart-container { height: calc(100% - 10px); padding-bottom: 25px; }
         }
 
-        .btn-nav { font-size: 15px; font-weight: 700; color: #666; letter-spacing: -0.02em; transition: 0.2s; }
+        .btn-nav { font-size: 16px; font-weight: 700; color: #555; letter-spacing: -0.01em; transition: 0.2s; }
         .btn-nav.active { color: #39FF14; }
 
         /* Watchlist */
@@ -103,7 +103,7 @@
             </div>
             <div id="watchlist" class="flex-1 overflow-y-auto p-3 no-scrollbar"></div>
             <div class="p-4 border-t border-white/5">
-                <input type="text" id="new-sym" placeholder="輸入代碼 (例: ICE:USDTWD)">
+                <input type="text" id="new-sym" placeholder="輸入代碼 (例: FX_IDC:USDTWD)">
             </div>
         </aside>
     </main>
@@ -116,9 +116,9 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const STORAGE_KEY = 'DN_Trade_V18';
+        const STORAGE_KEY = 'DN_Trade_V18_1';
         const defaultLists = {
-            forex: ['ICE:USDTWD', 'OANDA:USDTWD', 'FX_IDC:USDCNY'],
+            forex: ['FX_IDC:USDTWD', 'OANDA:USDTWD', 'FX_IDC:USDCNY'],
             crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT'],
             stock: ['NASDAQ:NVDA', 'NASDAQ:TSLA']
         };
@@ -126,14 +126,13 @@
         let currentCat = 'forex';
         let storage = JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultLists;
 
-        // 1. 核心邏輯：進入時強制載入 ICE:USDTWD
+        // 啟動強制加載 FX_IDC:USDTWD
         window.onload = () => {
-            loadChart('ICE:USDTWD'); 
+            loadChart('FX_IDC:USDTWD'); 
             fetchPrices();
-            renderWatchlist(false); // 渲染但不切換圖表
+            renderWatchlist(false);
         };
 
-        // 價格抓取
         async function fetchPrices() {
             try {
                 const bito = await fetch('https://api.bitopro.com/v3/tickers/usdt_twd');
@@ -147,14 +146,11 @@
         }
         setInterval(fetchPrices, 3000);
 
-        // UI 交互
         function toggleDrawer(side) {
             const left = document.getElementById('left-drawer');
             const right = document.getElementById('right-drawer');
             const btns = { left: document.getElementById('btn-left'), right: document.getElementById('btn-right'), chart: document.getElementById('btn-chart') };
-            
             Object.values(btns).forEach(b => b.classList.remove('active'));
-
             if (side === 'left') {
                 left.classList.toggle('active');
                 right.classList.remove('active');
@@ -186,7 +182,7 @@
                 "locale": "zh_TW",
                 "container_id": "tv_main",
                 "allow_symbol_change": true,
-                "hide_side_toolbar": false, // 確保功能列顯示
+                "hide_side_toolbar": false,
                 "details": false,
                 "hotlist": false,
                 "calendar": false
