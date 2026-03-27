@@ -82,9 +82,12 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const STORAGE_KEY = 'DN_Trade_V19_2';
+        // 更新 Key 以強制重置手機瀏覽器緩存
+        const STORAGE_KEY = 'DN_Trade_V19_Clean';
+        
+        // 核心修正：徹底移除 OANDA
         const defaultLists = {
-            forex: ['FX_IDC:USDTWD', 'OANDA:USDTWD', 'FX_IDC:USDCNY'],
+            forex: ['FX_IDC:USDTWD', 'FX_IDC:USDCNY'],
             crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT'],
             stock: ['NASDAQ:NVDA', 'NASDAQ:TSLA']
         };
