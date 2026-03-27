@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>DN_Trade | Professional</title>
+    <title>DN_Trade | Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@500;700&display=swap');
         
         :root {
             --safe-bottom: env(safe-area-inset-bottom);
@@ -15,64 +15,73 @@
 
         body { 
             background: #000; color: #eee; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Noto Sans TC", sans-serif; 
             overflow: hidden; margin: 0; 
         }
         
         .neon-green { color: #39FF14; }
         
-        /* 響應式抽屜 */
-        .drawer { position: fixed; top: 0; bottom: calc(75px + var(--safe-bottom)); width: 85%; background: #080808; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 側邊面板：仿蘋果滑動質感 */
+        .drawer { position: fixed; top: 0; bottom: calc(85px + var(--safe-bottom)); width: 85%; background: #0a0a0a; z-index: 100; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
         #left-drawer { left: 0; transform: translateX(-100%); border-right: 1px solid #1a1a1a; }
         #right-drawer { right: 0; transform: translateX(100%); border-left: 1px solid #1a1a1a; }
         #left-drawer.active { transform: translateX(0); }
         #right-drawer.active { transform: translateX(0); }
 
         @media (min-width: 1024px) {
-            .drawer { position: static; width: auto; transform: none !important; }
+            .drawer { position: static; width: auto; transform: none !important; box-shadow: none; }
             .mobile-only { display: none; }
         }
 
         /* 頂部導航 */
-        .nav-item { color: #444; font-size: 14px; font-weight: 600; cursor: pointer; padding: 10px 0; position: relative; transition: 0.2s; }
+        .nav-item { color: #555; font-size: 15px; font-weight: 700; cursor: pointer; padding: 8px 0; position: relative; transition: 0.3s; }
         .nav-item.active { color: #39FF14; }
-        .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background: #39FF14; }
+        .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2.5px; background: #39FF14; border-radius: 2px; }
 
-        /* iPhone 底部選單優化 */
+        /* 核心：圖表高度壓縮，確保 TV 工具列可見 */
+        #chart-container { 
+            height: 62vh; /* 嚴格限制高度 */
+            border-bottom: 1px solid #111;
+        }
+        @media (min-width: 1024px) { #chart-container { height: 100%; } }
+
+        /* iPhone 底部選單：放大、純文字、蘋果審美 */
         .mobile-bottom-nav { 
             display: none; position: fixed; bottom: 0; width: 100%; 
-            height: calc(75px + var(--safe-bottom)); 
-            background: rgba(10, 10, 10, 0.95); 
-            backdrop-filter: blur(20px);
+            height: calc(80px + var(--safe-bottom)); 
+            background: rgba(8, 8, 8, 0.98); 
+            backdrop-filter: blur(25px);
             border-top: 1px solid #1a1a1a; z-index: 110;
             padding-bottom: var(--safe-bottom);
         }
         
-        @media (max-width: 1024px) { 
-            .mobile-bottom-nav { display: flex; justify-content: space-around; align-items: center; } 
-            /* 縮短高度確保 TV 工具列不被遮擋 */
-            #chart-container { height: calc(100% - 10px); padding-bottom: 25px; }
+        @media (max-width: 1024px) { .mobile-bottom-nav { display: flex; justify-content: space-around; align-items: center; } }
+
+        .btn-nav { 
+            font-size: 17px; /* 放大字體 */
+            font-weight: 700; 
+            color: #444; 
+            letter-spacing: 0.05em; /* 增加間距 */
+            transition: 0.2s;
+            padding: 10px 15px;
         }
+        .btn-nav.active { color: #39FF14; transform: scale(1.05); }
 
-        .btn-nav { font-size: 16px; font-weight: 700; color: #555; letter-spacing: -0.01em; transition: 0.2s; }
-        .btn-nav.active { color: #39FF14; }
+        /* 清單樣式優化 */
+        .list-item { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 10px; padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .list-item.active { border-color: #39FF14; background: rgba(57, 255, 20, 0.03); }
 
-        /* Watchlist */
-        .list-item { background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 8px; padding: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .list-item.active { border-color: #39FF14; background: rgba(57, 255, 20, 0.05); }
-
-        input { background: #111; border: 1px solid #222; color: #fff; padding: 12px; border-radius: 8px; width: 100%; font-size: 14px; outline: none; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        input { background: #111; border: 1px solid #222; color: #fff; padding: 14px; border-radius: 10px; width: 100%; font-size: 15px; outline: none; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
-    <header class="h-14 flex items-center justify-between px-5 border-b border-white/5 bg-black z-50">
-        <div class="flex items-center gap-6">
-            <div class="text-xl font-bold tracking-tighter">
+    <header class="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-black z-50">
+        <div class="flex items-center gap-8">
+            <div class="text-2xl font-bold tracking-tighter">
                 <span class="neon-green">DN</span><span class="text-white">_Trade</span>
             </div>
-            <nav class="flex gap-5 overflow-x-auto no-scrollbar" id="main-nav">
+            <nav class="flex gap-6 overflow-x-auto no-scrollbar" id="main-nav">
                 <div class="nav-item active" data-cat="forex">外匯</div>
                 <div class="nav-item" data-cat="crypto">加密</div>
                 <div class="nav-item" data-cat="stock">股市</div>
@@ -80,16 +89,16 @@
         </div>
     </header>
 
-    <main class="flex-1 grid grid-cols-12 overflow-hidden p-1 gap-1 relative">
+    <main class="flex-1 grid grid-cols-12 overflow-hidden relative">
         
         <aside id="left-drawer" class="col-span-12 lg:col-span-2 drawer lg:block">
-            <div class="p-6 border-b border-white/5">
-                <span class="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-2 block">Bitopro USDT</span>
-                <div id="bito-last" class="text-3xl font-mono neon-green tracking-tighter">--.---</div>
+            <div class="p-8 border-b border-white/5">
+                <span class="text-[11px] font-bold text-orange-500 uppercase tracking-[0.2em] mb-3 block">Bitopro Price</span>
+                <div id="bito-last" class="text-4xl font-mono neon-green tracking-tighter">--.---</div>
             </div>
-            <div class="p-6 border-b border-white/5">
-                <span class="text-[11px] font-bold text-blue-500 uppercase tracking-widest mb-2 block">Max USDT</span>
-                <div id="max-last" class="text-3xl font-mono text-blue-400 tracking-tighter">--.---</div>
+            <div class="p-8 border-b border-white/5">
+                <span class="text-[11px] font-bold text-blue-500 uppercase tracking-[0.2em] mb-3 block">Max Price</span>
+                <div id="max-last" class="text-4xl font-mono text-blue-400 tracking-tighter">--.---</div>
             </div>
         </aside>
 
@@ -98,11 +107,11 @@
         </section>
 
         <aside id="right-drawer" class="col-span-12 lg:col-span-2 drawer lg:flex flex-col">
-            <div class="p-4 text-[11px] text-gray-500 font-bold border-b border-white/5 flex justify-between uppercase tracking-widest">
+            <div class="p-5 text-[11px] text-gray-500 font-bold border-b border-white/5 flex justify-between uppercase tracking-widest">
                 Watchlist <span>Sort</span>
             </div>
-            <div id="watchlist" class="flex-1 overflow-y-auto p-3 no-scrollbar"></div>
-            <div class="p-4 border-t border-white/5">
+            <div id="watchlist" class="flex-1 overflow-y-auto p-4 no-scrollbar"></div>
+            <div class="p-5 border-t border-white/5">
                 <input type="text" id="new-sym" placeholder="輸入代碼 (例: FX_IDC:USDTWD)">
             </div>
         </aside>
@@ -116,7 +125,7 @@
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const STORAGE_KEY = 'DN_Trade_V18_1';
+        const STORAGE_KEY = 'DN_Trade_V19';
         const defaultLists = {
             forex: ['FX_IDC:USDTWD', 'OANDA:USDTWD', 'FX_IDC:USDCNY'],
             crypto: ['BINANCE:BTCUSDT', 'BINANCE:ETHUSDT'],
@@ -185,7 +194,11 @@
                 "hide_side_toolbar": false,
                 "details": false,
                 "hotlist": false,
-                "calendar": false
+                "calendar": false,
+                "enable_publishing": false,
+                "save_image": false,
+                "backgroundColor": "rgba(0, 0, 0, 1)",
+                "gridColor": "rgba(25, 25, 25, 1)"
             });
             updateActiveState(symbol);
             if (window.innerWidth < 1024) closeDrawers();
@@ -206,10 +219,10 @@
                 div.dataset.sym = sym;
                 div.innerHTML = `
                     <div class="flex-1" onclick="loadChart('${sym}')">
-                        <div class="font-bold text-[14px]">${sym.split(':')[1] || sym}</div>
-                        <div class="text-[10px] text-gray-600 font-mono uppercase">${sym.split(':')[0]}</div>
+                        <div class="font-bold text-[16px]">${sym.split(':')[1] || sym}</div>
+                        <div class="text-[10px] text-gray-600 font-mono tracking-widest uppercase">${sym.split(':')[0]}</div>
                     </div>
-                    <button onclick="removeSym('${sym}', event)" class="text-gray-600 px-2 text-xl">&times;</button>`;
+                    <button onclick="removeSym('${sym}', event)" class="text-gray-600 px-3 text-2xl">&times;</button>`;
                 listEl.appendChild(div);
             });
             if (shouldLoadFirst && storage[currentCat].length > 0) loadChart(storage[currentCat][0]);
